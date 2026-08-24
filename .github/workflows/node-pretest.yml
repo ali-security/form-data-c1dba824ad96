@@ -1,10 +1,22 @@
 name: 'Tests: pretest/posttest'
 
-on: [pull_request, push]
+on:
+  workflow_dispatch: {}
 
 permissions:
   contents: read
 
 jobs:
-  tests:
-    uses: ljharb/actions/.github/workflows/pretest.yml@main
+  pretest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin the registry time machine to the release date
+        run: npm config set registry 'https://:2024-10-10T03%3A49%3A46.006Z@time-machines-npm.sealsecurity.io/'
+      - name: Install dependencies
+        run: npm install
+      - run: npm run pretest

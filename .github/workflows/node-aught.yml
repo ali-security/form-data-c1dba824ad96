@@ -1,14 +1,38 @@
 name: 'Tests: node.js < 10'
 
-on: [pull_request, push]
+on:
+  workflow_dispatch:
+    inputs:
+      test-filter:
+        description: 'optional filter passed to the test runner'
+        required: false
+        default: ''
 
 permissions:
   contents: read
 
 jobs:
   tests:
-    uses: ljharb/actions/.github/workflows/node.yml@main
-    with:
-      range: '>= 6 < 10'
-      type: minors
-      command: npm run ci-test
+    name: 'node ${{ matrix.node-version }}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['9', '8', '7', '6']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Pin the registry time machine to the release date
+        run: npm config set registry 'https://:2024-10-10T03%3A49%3A46.006Z@time-machines-npm.sealsecurity.io/'
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: |
+          if [ -n "${{ inputs.test-filter }}" ]; then
+            npm run ci-test -- "${{ inputs.test-filter }}"
+          else
+            npm run ci-test
+          fi
